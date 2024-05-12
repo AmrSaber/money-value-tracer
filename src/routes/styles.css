@@ -1,3 +1,9 @@
+:root {
+	--clickable-color: dodgerblue;
+	--clickable-hover: #0a4988;
+	--accent: #1979b1;
+}
+
 * {
 	box-sizing: border-box;
 }
@@ -7,6 +13,9 @@ html {
 }
 
 body {
+	color: #333;
+	background-color: #fdfdfd;
+
 	margin: 0;
 	padding: 0;
 
@@ -15,4 +24,43 @@ body {
 
 	display: flex;
 	flex-direction: column;
+}
+
+.clickable {
+	color: var(--clickable-color);
+	text-decoration: none;
+	cursor: pointer;
+	padding: 0.5rem;
+}
+
+.clickable:hover {
+	color: var(--clickable-hover);
+}
+
+a,
+a:visited,
+a:active {
+	color: var(--clickable-color);
+	text-decoration: none;
+}
+
+a:hover {
+	color: var(--clickable-hover);
+}
+
+@media screen and (prefers-color-scheme: light) {
+	.dark-only {
+		display: none;
+	}
+}
+
+@media screen and (prefers-color-scheme: dark) {
+	body {
+		color: white;
+		background-color: #222;
+	}
+
+	.light-only {
+		display: none;
+	}
 }
