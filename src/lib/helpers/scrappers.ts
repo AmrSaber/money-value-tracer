@@ -1,18 +1,19 @@
 import { Currency } from '$lib/constants';
 import { NumberRegex } from '$lib/regex';
+import { Price } from '$lib/types';
 import * as cheerio from 'cheerio';
 
-export async function scrapCurrencyRate(from: Currency, to: Currency): Promise<number> {
+export async function scrapCurrencyRate(from: Currency, to: Currency): Promise<Price> {
 	const rate = await scrapPage(
 		`https://www.xe.com/currencyconverter/convert/?Amount=1&From=${from}&To=${to}`,
 		'section main p:nth-of-type(2)',
 		numberMapper
 	);
 
-	return Number(rate);
+	return new Price(rate, to);
 }
 
-export async function scrapGoldPrice(currency: Currency): Promise<number> {
+export async function scrapGoldPrice(currency: Currency): Promise<Price> {
 	// Record type acts as exhaustive switch-case
 	const scrappers: Record<Currency, (c: Currency) => Promise<number>> = {
 		[Currency.GBP]: scrapGlobalGoldPrice,
@@ -20,7 +21,8 @@ export async function scrapGoldPrice(currency: Currency): Promise<number> {
 		[Currency.EGP]: scrapEgGoldPrice
 	};
 
-	return await scrappers[currency](currency);
+	const rate = await scrappers[currency](currency);
+	return new Price(rate, currency);
 }
 
 async function scrapGlobalGoldPrice(currency: Currency): Promise<number> {
@@ -58,5 +60,5 @@ async function scrapPage<T = string>(
 }
 
 function numberMapper(value: string): number {
-	return Number(value.match(NumberRegex)?.at(0) ?? -1);
+	return Number(Number(value.match(NumberRegex)?.at(0) ?? -1).toFixed(3));
 }
