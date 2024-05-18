@@ -19,3 +19,13 @@ export function prettify<T extends PlainObject>(value: T): Prettified<T> {
 
 	return Object.fromEntries(mappedEntries);
 }
+
+export function cleanObject<T extends PlainObject | PlainObject[]>(value: T): T {
+	if (typeof value != 'object') return value;
+
+	// @ts-ignore
+	if (Array.isArray(value)) return value.map((item) => cleanObject(item));
+
+	const entries = Object.entries(value);
+	return Object.fromEntries(entries.filter(([, val]) => val != null && JSON.stringify(val) != '{}')) as T;
+}

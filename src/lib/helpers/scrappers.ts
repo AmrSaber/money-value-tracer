@@ -7,7 +7,7 @@ export async function scrapCurrencyRate(from: Currency, to: Currency): Promise<P
 	const rate = await scrapPage(
 		`https://www.xe.com/currencyconverter/convert/?Amount=1&From=${from}&To=${to}`,
 		'section main p:nth-of-type(2)',
-		numberMapper
+		numberMapper,
 	);
 
 	return new Price(rate, to);
@@ -18,7 +18,7 @@ export async function scrapGoldPrice(currency: Currency): Promise<Price> {
 	const scrappers: Record<Currency, (c: Currency) => Promise<number>> = {
 		[Currency.GBP]: scrapGlobalGoldPrice,
 		[Currency.USD]: scrapGlobalGoldPrice,
-		[Currency.EGP]: scrapEgGoldPrice
+		[Currency.EGP]: scrapEgGoldPrice,
 	};
 
 	const rate = await scrappers[currency](currency);
@@ -39,17 +39,13 @@ async function scrapEgGoldPrice(): Promise<number> {
 	const price = await scrapPage(
 		'https://market.isagha.com',
 		'#header-prices tr:nth-of-type(1) td.header-price-item',
-		numberMapper
+		numberMapper,
 	);
 
 	return Number(((price / 21) * 24).toFixed(3));
 }
 
-async function scrapPage<T = string>(
-	url: string,
-	selector: string,
-	mapper?: (value: string) => T
-): Promise<T> {
+async function scrapPage<T = string>(url: string, selector: string, mapper?: (value: string) => T): Promise<T> {
 	const body = await fetch(url).then((res) => res.text());
 
 	const $ = cheerio.load(body);

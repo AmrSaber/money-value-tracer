@@ -1,29 +1,64 @@
-import { Currency, Price, prettify, scrapCurrencyRate, scrapGoldPrice } from '$lib';
+import { Currency, Price, cleanObject, prettify } from '$lib';
+import { TS_RECENT_TABLE_NAME, TS_TRACKERS_TABLE_NAME, Trackers, getTimeSeriesDbClient } from '$lib/server';
 import { json } from '@sveltejs/kit';
 import YAML from 'yaml';
 
 export async function GET({ url }) {
-	const [gbpToUsd, usdToEgp, gbpToEgp, goldEgp, goldGbp, goldUsd] = await Promise.all([
-		scrapCurrencyRate(Currency.GBP, Currency.USD),
-		scrapCurrencyRate(Currency.USD, Currency.EGP),
-		scrapCurrencyRate(Currency.GBP, Currency.EGP),
-		scrapGoldPrice(Currency.EGP),
-		scrapGoldPrice(Currency.GBP),
-		scrapGoldPrice(Currency.USD),
-	]);
+	const db = getTimeSeriesDbClient();
 
-	let response = {
+	const query = `
+	WITH recents AS (
+		SELECT tracker_id, MAX(timestamp) AS latest_time
+		FROM ${TS_RECENT_TABLE_NAME}
+		WHERE value != -1
+		GROUP BY tracker_id
+	)
+	SELECT ts.id AS id, ts.timestamp AS timestamp, t.name AS tracker_name, ts.value AS value, ts.currency AS currency
+	FROM ${TS_RECENT_TABLE_NAME} ts
+	JOIN recents r on r.tracker_id = ts.tracker_id AND r.latest_time = ts.timestamp
+	JOIN ${TS_TRACKERS_TABLE_NAME} t on t.id = ts.tracker_id
+	`;
+
+	type Entry = {
+		id: number;
+		timestamp: string;
+		tracker_name: string;
+		price: Price;
+	};
+
+	const entries: Entry[] = db
+		.query(query)
+		.all()
+		.map(({ value, currency, ...rest }: any) => ({
+			...rest,
+			price: new Price(value, currency as Currency),
+		}));
+
+	const findEntry = (tracker: Trackers) => {
+		const entry = entries.find((e) => e.tracker_name === tracker);
+		if (entry == null) return undefined;
+
+		const { price, timestamp } = entry;
+		if (price != null) price.timestamp = new Date(timestamp);
+
+		return price;
+	};
+
+	const gbpToUsd = findEntry(Trackers.GBP_TO_USD);
+	const usdToEgp = findEntry(Trackers.USD_TO_EGP);
+	const gbpToEgp = findEntry(Trackers.GBP_TO_EGP);
+	const goldEgp = findEntry(Trackers.GOLD_EGP);
+	const goldGbp = findEntry(Trackers.GOLD_GBP);
+	const goldUsd = findEntry(Trackers.GOLD_USD);
+
+	let response: any = {
 		currency: {
 			gbpToUsd,
 
 			usd: usdToEgp,
 			gbp: gbpToEgp,
 
-			goldBased: {
-				gbpToUsd: new Price(goldUsd.value / goldGbp.value, Currency.USD),
-				usd: new Price(goldEgp.value / goldUsd.value, Currency.EGP),
-				gbp: new Price(goldEgp.value / goldGbp.value, Currency.EGP),
-			},
+			goldBased: {},
 		},
 
 		gold: {
@@ -31,19 +66,29 @@ export async function GET({ url }) {
 			gbp: goldGbp,
 			usd: goldUsd,
 
-			currencyBased: {
-				usdBased: new Price(goldUsd.value * usdToEgp.value, Currency.EGP),
-				gbpBased: new Price(goldGbp.value * gbpToEgp.value, Currency.EGP),
-			},
+			currencyBased: {},
 		},
-
-		timestamp: new Date().toISOString(),
 	};
+
+	if (goldUsd != null && goldGbp != null)
+		response.currency.goldBased.gbbToUsd = new Price(goldUsd.value / goldGbp.value, Currency.USD);
+
+	if (goldEgp != null) {
+		if (goldUsd != null) response.currency.goldBased.usd = new Price(goldEgp.value / goldUsd.value, Currency.EGP);
+		if (goldGbp != null) response.currency.goldBased.usd = new Price(goldEgp.value / goldGbp.value, Currency.EGP);
+	}
+
+	if (goldUsd != null && usdToEgp != null)
+		response.gold.currencyBased.usdBased = new Price(goldUsd.value * usdToEgp.value, Currency.EGP);
+
+	if (goldGbp != null && gbpToEgp != null)
+		response.gold.currencyBased.usdBased = new Price(goldGbp.value * gbpToEgp.value, Currency.EGP);
+
+	response = cleanObject(response);
 
 	if (url.searchParams.get('style') === 'pretty') response = prettify(response);
 
 	if (url.searchParams.get('output') === 'yaml') {
-		console.log({ response, yaml: YAML.stringify(response) });
 		return new Response(YAML.stringify(response), {
 			headers: { 'content-type': 'text/yaml; charset=utf-8' },
 		});

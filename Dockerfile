@@ -17,7 +17,7 @@ WORKDIR /app
 COPY --from=install /app /app
 COPY . .
 
-RUN bun run build
+RUN bun --bun run build
 
 ENV PORT=80
 EXPOSE 80
