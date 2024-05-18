@@ -10,7 +10,7 @@ export async function GET({ url }) {
 	WITH recents AS (
 		SELECT tracker_id, MAX(timestamp) AS latest_time
 		FROM ${TS_RECENT_TABLE_NAME}
-		WHERE value != -1
+		WHERE value >= 0
 		GROUP BY tracker_id
 	)
 	SELECT ts.id AS id, ts.timestamp AS timestamp, t.name AS tracker_name, ts.value AS value, ts.currency AS currency
