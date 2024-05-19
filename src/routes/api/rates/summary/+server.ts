@@ -75,14 +75,14 @@ export async function GET({ url }) {
 
 	if (goldEgp != null) {
 		if (goldUsd != null) response.currency.goldBased.usd = new Price(goldEgp.value / goldUsd.value, Currency.EGP);
-		if (goldGbp != null) response.currency.goldBased.usd = new Price(goldEgp.value / goldGbp.value, Currency.EGP);
+		if (goldGbp != null) response.currency.goldBased.gbp = new Price(goldEgp.value / goldGbp.value, Currency.EGP);
 	}
 
 	if (goldUsd != null && usdToEgp != null)
 		response.gold.currencyBased.usdBased = new Price(goldUsd.value * usdToEgp.value, Currency.EGP);
 
 	if (goldGbp != null && gbpToEgp != null)
-		response.gold.currencyBased.usdBased = new Price(goldGbp.value * gbpToEgp.value, Currency.EGP);
+		response.gold.currencyBased.gbpBased = new Price(goldGbp.value * gbpToEgp.value, Currency.EGP);
 
 	response = cleanObject(response);
 
