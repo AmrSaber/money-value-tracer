@@ -2,6 +2,7 @@ import { Currency } from '$lib/constants';
 import { NumberRegex } from '$lib/regex';
 import { Price } from '$lib/types';
 import * as cheerio from 'cheerio';
+import { roundNumber } from './numbers';
 
 export async function scrapCurrencyRate(from: Currency, to: Currency): Promise<Price> {
 	const rate = await scrapPage(
@@ -56,5 +57,6 @@ async function scrapPage<T = string>(url: string, selector: string, mapper?: (va
 }
 
 function numberMapper(value: string): number {
-	return Number(Number(value.match(NumberRegex)?.at(0) ?? -1).toFixed(3));
+	const match = Number(value.match(NumberRegex)?.at(0) ?? -1);
+	return roundNumber(match);
 }

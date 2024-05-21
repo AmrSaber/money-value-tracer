@@ -26,6 +26,7 @@ cron.schedule(
 			const now = new Date().toISOString();
 
 			events.forEach((event) => {
+				// Ignore failed scrapping
 				if (event.price.value < 0) return;
 
 				const tracker = db.query(`SELECT * FROM trackers WHERE name = ?`).get(event.tracker) as unknown as DbTracker;
