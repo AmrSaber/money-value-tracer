@@ -1,7 +1,15 @@
-import { Price } from '$lib/types';
+import { Price, type PojoPrice } from '$lib/types';
 
 export type Prettified<T extends object> = {
 	[K in keyof T]: T[K] extends Price ? string : T[K];
+};
+
+export type Serialized<T extends object> = {
+	[K in keyof T]: T[K] extends Price ? PojoPrice : T[K] extends object ? Serialized<T[K]> : T[K];
+};
+
+export type Deserialized<T extends object> = {
+	[K in keyof T]: T[K] extends PojoPrice ? Price : T[K] extends object ? Deserialized<T[K]> : T[K];
 };
 
 export function prettify<T extends object>(value: T): Prettified<T> {
@@ -11,6 +19,23 @@ export function prettify<T extends object>(value: T): Prettified<T> {
 		if (value instanceof Price) return [key, value.toPrettyString()];
 		if (Array.isArray(value)) return [key, value.map(prettify)];
 		if (typeof value === 'object') return [key, prettify(value)];
+		return [key, value];
+	});
+
+	return Object.fromEntries(mappedEntries);
+}
+
+export function serialize<T extends object>(value: T): Serialized<T> {
+	return JSON.parse(JSON.stringify(value));
+}
+
+export function deserialize<T extends object>(value: T): Deserialized<T> {
+	const entries = Object.entries(value);
+
+	const mappedEntries = entries.map(([key, value]) => {
+		if (Price.isPricePojo(value)) return [key, Price.fromPojo(value)];
+		if (Array.isArray(value)) return [key, value.map(deserialize)];
+		if (typeof value === 'object') return [key, deserialize(value)];
 		return [key, value];
 	});
 
