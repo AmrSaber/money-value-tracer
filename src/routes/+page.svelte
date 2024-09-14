@@ -1,18 +1,18 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
-	import { deserialize } from '$lib';
+	import { deserializePrices } from '$lib';
 	import type { RatesSummary } from '$lib/server';
 	import type { PageData } from './$types';
 
 	export let data: PageData;
-	let summary: RatesSummary = deserialize(data.summary);
+	let summary: RatesSummary = deserializePrices(data.summary);
 
 	// TODO: enable (fix?) SSE instead
 	if (browser) {
 		setInterval(async () => {
 			const newSummary = await fetch('/api/rates/summary').then((res) => res.json());
 			console.log(newSummary);
-			summary = deserialize(newSummary) as RatesSummary;
+			summary = deserializePrices(newSummary) as RatesSummary;
 		}, 60_000);
 	}
 

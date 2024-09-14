@@ -1,7 +1,7 @@
 import { Currency } from '$lib/constants';
 import { cleanObject } from '$lib/helpers';
 import { Price } from '$lib/types';
-import { TS_RECENT_TABLE_NAME, TS_TRACKERS_TABLE_NAME, Trackers, getTimeSeriesDbClient } from './db';
+import { TS_TABLE_NAME, TS_TRACKERS_TABLE_NAME, Trackers, getTimeSeriesDbClient } from './db';
 
 export type RatesSummary = {
 	currency: {
@@ -33,12 +33,12 @@ export function getRatesSummary(): RatesSummary {
 	const query = `
 	WITH recents AS (
 		SELECT tracker_id, MAX(timestamp) AS latest_time
-		FROM ${TS_RECENT_TABLE_NAME}
+		FROM ${TS_TABLE_NAME}
 		WHERE value >= 0
 		GROUP BY tracker_id
 	)
 	SELECT ts.id AS id, ts.timestamp AS timestamp, t.name AS tracker_name, ts.value AS value, ts.currency AS currency
-	FROM ${TS_RECENT_TABLE_NAME} ts
+	FROM ${TS_TABLE_NAME} ts
 	JOIN recents r on r.tracker_id = ts.tracker_id AND r.latest_time = ts.timestamp
 	JOIN ${TS_TRACKERS_TABLE_NAME} t on t.id = ts.tracker_id
 	`;

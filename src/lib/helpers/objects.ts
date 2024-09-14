@@ -25,17 +25,17 @@ export function prettify<T extends object>(value: T): Prettified<T> {
 	return Object.fromEntries(mappedEntries);
 }
 
-export function serialize<T extends object>(value: T): Serialized<T> {
+export function serializePrices<T extends object>(value: T): Serialized<T> {
 	return JSON.parse(JSON.stringify(value));
 }
 
-export function deserialize<T extends object>(value: T): Deserialized<T> {
+export function deserializePrices<T extends object>(value: T): Deserialized<T> {
 	const entries = Object.entries(value);
 
 	const mappedEntries = entries.map(([key, value]) => {
 		if (Price.isPricePojo(value)) return [key, Price.fromPojo(value)];
-		if (Array.isArray(value)) return [key, value.map(deserialize)];
-		if (typeof value === 'object') return [key, deserialize(value)];
+		if (Array.isArray(value)) return [key, value.map(deserializePrices)];
+		if (typeof value === 'object') return [key, deserializePrices(value)];
 		return [key, value];
 	});
 

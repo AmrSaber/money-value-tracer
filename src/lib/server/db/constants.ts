@@ -1,8 +1,7 @@
 export const DB_DIR = 'dbs';
 
 export const TS_TRACKERS_TABLE_NAME = 'trackers';
-export const TS_RECENT_TABLE_NAME = 'time_series_recent';
-export const TS_HISTORICAL_TABLE_NAME = 'time_series_historical';
+export const TS_TABLE_NAME = 'time_series';
 
 export enum Trackers {
 	GBP_TO_USD = 'GBP_TO_USD',

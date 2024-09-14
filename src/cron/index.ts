@@ -1,5 +1,5 @@
 import { Currency, scrapCurrencyRate, scrapGoldPrice } from '$lib';
-import { TS_RECENT_TABLE_NAME, Trackers, acquireLock, getTimeSeriesDbClient } from '$lib/server';
+import { TS_TABLE_NAME, Trackers, acquireLock, getTimeSeriesDbClient } from '$lib/server';
 import type { DbTracker } from '$lib/server/db/types';
 import cron from 'node-cron';
 
@@ -31,9 +31,12 @@ cron.schedule(
 
 				const tracker = db.query(`SELECT * FROM trackers WHERE name = ?`).get(event.tracker) as unknown as DbTracker;
 
-				db.query(
-					`INSERT INTO ${TS_RECENT_TABLE_NAME} (timestamp, tracker_id, value, currency) VALUES (?, ?, ?, ?)`,
-				).run(now, tracker.id as number, event.price.value, event.price.currency);
+				db.query(`INSERT INTO ${TS_TABLE_NAME} (timestamp, tracker_id, value, currency) VALUES (?, ?, ?, ?)`).run(
+					now,
+					tracker.id as number,
+					event.price.value,
+					event.price.currency,
+				);
 			});
 		} catch (err) {
 			console.error('error scrapping data:', err);

@@ -13,7 +13,11 @@ export function initTimeSeriesDb(db: Database) {
 	db.exec('PRAGMA journal_mode = WAL;');
 
 	// Run migrations
-	timeSeriesDbMigrations.forEach((query) => db.run(query));
+	try {
+		timeSeriesDbMigrations.forEach((query) => db.run(query));
+	} catch (err) {
+		console.warn('Migration error:', err);
+	}
 
 	// Add trackers
 	const trackers = Object.values(Trackers);
