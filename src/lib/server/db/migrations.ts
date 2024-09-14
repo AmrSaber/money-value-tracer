@@ -16,9 +16,6 @@ export const timeSeriesDbMigrations = [
 	// Tracker name index
 	`CREATE UNIQUE INDEX IF NOT EXISTS idx_trackers_name ON trackers (name)`,
 
-	// Rename old table to just time_series
-	`ALTER TABLE time_series_recent RENAME TO time_series`,
-
 	// Recent data table
 	`CREATE TABLE IF NOT EXISTS time_series (
 		id INTEGER PRIMARY KEY,
@@ -33,7 +30,4 @@ export const timeSeriesDbMigrations = [
 	// Recent data index
 	`CREATE UNIQUE INDEX IF NOT EXISTS idx_time_series_tracker_id_timestamp ON time_series (tracker_id, timestamp)`,
 	`CREATE INDEX IF NOT EXISTS idx_time_series_tracker_id ON time_series (tracker_id)`,
-
-	// Drop historical table for now
-	`DROP TABLE IF EXISTS time_series_historical`,
 ];

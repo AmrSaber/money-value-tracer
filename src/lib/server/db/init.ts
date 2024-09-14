@@ -2,7 +2,7 @@ import { Database } from 'bun:sqlite';
 import { mkdirSync } from 'fs';
 
 import { DB_DIR, Trackers } from './constants';
-import { locksDbMigrations, timeSeriesDbMigrations } from './queries';
+import { locksDbMigrations, timeSeriesDbMigrations } from './migrations';
 
 export function initLocksDb(db: Database) {
 	db.exec('PRAGMA journal_mode = WAL;');
