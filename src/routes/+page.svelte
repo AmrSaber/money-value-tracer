@@ -49,9 +49,9 @@
 	<div id="rates-container">
 		<div class="rates" id="currency">
 			<h2>Currency</h2>
-			<div class="table">
-				<span>USD</span> <span>{summary.currency.usd.toPrettyString()}</span>
-				<span>GBP</span> <span>{summary.currency.gbp.toPrettyString()}</span>
+			<div class="table currency">
+				<span>USD</span> <span class="value">{summary.currency.usd.toPrettyString()}</span>
+				<span>GBP</span> <span class="value">{summary.currency.gbp.toPrettyString()}</span>
 			</div>
 		</div>
 
@@ -59,16 +59,18 @@
 
 		<div class="rates" id="gold">
 			<h2>Gold</h2>
-			<div class="table">
-				<span>EGP</span> <span>{summary.gold.egp.toPrettyString()}</span>
-				<span>USD</span> <span>{summary.gold.usd.toPrettyString()}</span>
-				<span>GBP</span> <span>{summary.gold.gbp.toPrettyString()}</span>
-			</div>
+			<div class="table gold">
+				<span>EGP</span>
+				<span class="value">{summary.gold.egp.toPrettyString()}</span>
+				<span></span>
 
-			<h3>Currency Based</h3>
-			<div class="table">
-				<span>USD</span> <span>{summary.gold.currencyBased?.usdBased?.toPrettyString()}</span>
-				<span>GBP</span> <span>{summary.gold.currencyBased?.gbpBased?.toPrettyString()}</span>
+				<span>USD</span>
+				<span class="value">{summary.gold.currencyBased?.usdBased?.toPrettyString()}</span>
+				<span class="value">({summary.gold.usd.toPrettyString()})</span>
+
+				<span>GBP</span>
+				<span class="value">{summary.gold.currencyBased?.gbpBased?.toPrettyString()}</span>
+				<span class="value">({summary.gold.gbp.toPrettyString()})</span>
 			</div>
 		</div>
 	</div>
@@ -95,9 +97,19 @@
 		width: fit-content;
 
 		grid-auto-flow: row;
-		grid-template-columns: 4rem 1fr;
+		row-gap: 0.25rem;
+	}
 
-		row-gap: 0.5rem;
+	div.table.currency {
+		grid-template-columns: 4rem 1fr;
+	}
+
+	div.table.gold {
+		grid-template-columns: 4rem 1fr 1fr;
+	}
+
+	.value {
+		text-align: center;
 	}
 
 	#rates-container {
