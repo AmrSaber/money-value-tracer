@@ -5,7 +5,7 @@ export enum Currency {
 }
 
 export const currencyToSymbol: Record<Currency, string> = {
-	[Currency.EGP]: '£E',
+	[Currency.EGP]: 'E£',
 	[Currency.GBP]: '£',
 	[Currency.USD]: '$',
 };

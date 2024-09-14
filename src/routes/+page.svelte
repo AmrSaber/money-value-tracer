@@ -53,12 +53,6 @@
 				<span>USD</span> <span>{summary.currency.usd.toPrettyString()}</span>
 				<span>GBP</span> <span>{summary.currency.gbp.toPrettyString()}</span>
 			</div>
-
-			<h3>Gold Based</h3>
-			<div class="table">
-				<span>USD</span> <span>{summary.currency.goldBased?.usd?.toPrettyString()}</span>
-				<span>GBP</span> <span>{summary.currency.goldBased?.gbp?.toPrettyString()}</span>
-			</div>
 		</div>
 
 		<div class="spacer" />
