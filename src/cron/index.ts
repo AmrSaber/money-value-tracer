@@ -1,5 +1,5 @@
 import { Currency, scrapCurrencyRate, scrapGoldPrice } from '$lib';
-import { TS_TABLE_NAME, Trackers, acquireLock, getTimeSeriesDbClient } from '$lib/server';
+import { TS_TABLE_NAME, Tracker, acquireLock, getTimeSeriesDbClient } from '$lib/server';
 import type { DbTracker } from '$lib/server/db/types';
 import cron from 'node-cron';
 
@@ -15,12 +15,12 @@ cron.schedule(
 			const db = getTimeSeriesDbClient();
 
 			const events = await Promise.all([
-				scrapCurrencyRate(Currency.GBP, Currency.USD).then((price) => ({ price, tracker: Trackers.GBP_TO_USD })),
-				scrapCurrencyRate(Currency.USD, Currency.EGP).then((price) => ({ price, tracker: Trackers.USD_TO_EGP })),
-				scrapCurrencyRate(Currency.GBP, Currency.EGP).then((price) => ({ price, tracker: Trackers.GBP_TO_EGP })),
-				scrapGoldPrice(Currency.EGP).then((price) => ({ price, tracker: Trackers.GOLD_EGP })),
-				scrapGoldPrice(Currency.GBP).then((price) => ({ price, tracker: Trackers.GOLD_GBP })),
-				scrapGoldPrice(Currency.USD).then((price) => ({ price, tracker: Trackers.GOLD_USD })),
+				scrapCurrencyRate(Currency.GBP, Currency.USD).then((price) => ({ price, tracker: Tracker.GBP_TO_USD })),
+				scrapCurrencyRate(Currency.USD, Currency.EGP).then((price) => ({ price, tracker: Tracker.USD_TO_EGP })),
+				scrapCurrencyRate(Currency.GBP, Currency.EGP).then((price) => ({ price, tracker: Tracker.GBP_TO_EGP })),
+				scrapGoldPrice(Currency.EGP).then((price) => ({ price, tracker: Tracker.GOLD_EGP })),
+				scrapGoldPrice(Currency.GBP).then((price) => ({ price, tracker: Tracker.GOLD_GBP })),
+				scrapGoldPrice(Currency.USD).then((price) => ({ price, tracker: Tracker.GOLD_USD })),
 			]);
 
 			const now = new Date().toISOString();

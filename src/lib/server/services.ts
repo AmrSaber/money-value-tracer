@@ -1,7 +1,8 @@
 import { Currency } from '$lib/constants';
 import { cleanObject } from '$lib/helpers';
 import { Price } from '$lib/types';
-import { TS_TABLE_NAME, TS_TRACKERS_TABLE_NAME, Trackers, getTimeSeriesDbClient } from './db';
+import type { DateTime, Duration } from 'luxon';
+import { TS_TABLE_NAME, TS_TRACKERS_TABLE_NAME, Tracker, getTimeSeriesDbClient } from './db';
 
 export type RatesSummary = {
 	currency: {
@@ -58,7 +59,7 @@ export function getRatesSummary(): RatesSummary {
 			price: new Price(value, currency as Currency),
 		}));
 
-	const findEntry = (tracker: Trackers) => {
+	const findEntry = (tracker: Tracker) => {
 		const entry = entries.find((e) => e.tracker_name === tracker);
 		if (entry == null) return undefined;
 
@@ -68,12 +69,12 @@ export function getRatesSummary(): RatesSummary {
 		return price;
 	};
 
-	const gbpToUsd = findEntry(Trackers.GBP_TO_USD);
-	const usdToEgp = findEntry(Trackers.USD_TO_EGP);
-	const gbpToEgp = findEntry(Trackers.GBP_TO_EGP);
-	const goldEgp = findEntry(Trackers.GOLD_EGP);
-	const goldGbp = findEntry(Trackers.GOLD_GBP);
-	const goldUsd = findEntry(Trackers.GOLD_USD);
+	const gbpToUsd = findEntry(Tracker.GBP_TO_USD);
+	const usdToEgp = findEntry(Tracker.USD_TO_EGP);
+	const gbpToEgp = findEntry(Tracker.GBP_TO_EGP);
+	const goldEgp = findEntry(Tracker.GOLD_EGP);
+	const goldGbp = findEntry(Tracker.GOLD_GBP);
+	const goldUsd = findEntry(Tracker.GOLD_USD);
 
 	const summary: any = {
 		currency: {
@@ -109,4 +110,33 @@ export function getRatesSummary(): RatesSummary {
 		summary.gold.currencyBased.gbpBased = new Price(goldGbp.value * gbpToEgp.value, Currency.EGP);
 
 	return cleanObject(summary);
+}
+
+type TimeWindowAggregate = {
+	tracker: string;
+	time_window: string;
+	value: number;
+};
+
+export function getTimeWindowAggregation(
+	tracker: Tracker,
+	duration: Duration,
+	cutoff?: DateTime,
+): TimeWindowAggregate[] {
+	const db = getTimeSeriesDbClient();
+
+	const durationSeconds = duration.as('seconds');
+	const query = `
+        SELECT
+            tr.name as tracker,
+            STRFTIME('%FT%T', (STRFTIME('%s', ts.timestamp) / ${durationSeconds}) * ${durationSeconds}, 'unixepoch') AS time_window,
+            ROUND(AVG(value), 3) as value
+        FROM ${TS_TABLE_NAME} ts
+        JOIN ${TS_TRACKERS_TABLE_NAME} tr ON tr.id = ts.tracker_id
+        WHERE tr.name = "${tracker}" AND ts.timestamp >= "${cutoff?.toISO() ?? 0}"
+        GROUP BY time_window, tracker
+		ORDER BY time_window ASC
+    `;
+
+	return db.query(query).all() as TimeWindowAggregate[];
 }

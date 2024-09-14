@@ -1,7 +1,7 @@
 import { Database } from 'bun:sqlite';
 import { mkdirSync } from 'fs';
 
-import { DB_DIR, Trackers } from './constants';
+import { DB_DIR, Tracker } from './constants';
 import { locksDbMigrations, timeSeriesDbMigrations } from './migrations';
 
 export function initLocksDb(db: Database) {
@@ -20,7 +20,7 @@ export function initTimeSeriesDb(db: Database) {
 	}
 
 	// Add trackers
-	const trackers = Object.values(Trackers);
+	const trackers = Object.values(Tracker);
 
 	const tx = db.transaction(() => {
 		trackers.forEach((tracker) => {
