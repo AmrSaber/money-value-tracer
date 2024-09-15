@@ -1,7 +1,7 @@
 import { Currency } from '$lib/constants';
 import { cleanObject } from '$lib/helpers';
 import { Price } from '$lib/types';
-import type { DateTime, Duration } from 'luxon';
+import { DateTime, type Duration } from 'luxon';
 import { TS_TABLE_NAME, TS_TRACKERS_TABLE_NAME, Tracker, getTimeSeriesDbClient } from './db';
 
 export type RatesSummary = {
@@ -112,36 +112,89 @@ export function getRatesSummary(): RatesSummary {
 	return cleanObject(summary);
 }
 
-type TimeWindowAggregate = {
+export type TimeWindowAggregate = {
 	tracker: string;
-	time_window: string;
-	value: number;
+	timeWindow: string;
+	price: Price;
 };
 
 export function getTimeWindowAggregation(
 	tracker: Tracker,
-	duration: Duration,
-	cutoff?: DateTime,
+	windowSize: Duration,
+	{ start = DateTime.fromMillis(0), end = DateTime.now() }: { start?: DateTime; end?: DateTime } = {},
 ): TimeWindowAggregate[] {
 	const db = getTimeSeriesDbClient();
+
+	type QueryRow = {
+		tracker: string;
+		time_window: string;
+		value: number;
+		currency: string;
+	};
 
 	return db
 		.query(
 			`
-        SELECT
-            tr.name as tracker,
-            STRFTIME('%FT%T', (STRFTIME('%s', ts.timestamp) / $duration) * $duration, 'unixepoch') AS time_window,
-            ROUND(AVG(value), 3) as value
-        FROM ${TS_TABLE_NAME} ts
-        JOIN ${TS_TRACKERS_TABLE_NAME} tr ON tr.id = ts.tracker_id AND tr.name = $tracker
-        WHERE ts.timestamp >= $cutoff
-        GROUP BY time_window, tracker
-		ORDER BY time_window ASC
-    `,
+			SELECT
+				tr.name as tracker,
+				STRFTIME('%FT%T', (STRFTIME('%s', ts.timestamp) / $windowSize) * $windowSize, 'unixepoch') AS time_window,
+				ROUND(AVG(value), 3) as value,
+				ts.currency as currency
+			FROM ${TS_TABLE_NAME} ts
+			JOIN ${TS_TRACKERS_TABLE_NAME} tr ON tr.id = ts.tracker_id AND tr.name = $tracker
+			WHERE ts.timestamp >= $start AND ts.timestamp <= $end
+			GROUP BY time_window, tracker, currency
+			ORDER BY time_window ASC
+			`,
 		)
 		.all({
-			$duration: duration.as('seconds'),
+			$windowSize: windowSize.as('seconds'),
 			$tracker: tracker,
-			$cutoff: cutoff?.toISO() ?? 0,
-		}) as TimeWindowAggregate[];
+			$start: start.toISO(),
+			$end: end.toISO(),
+		})
+		.map<TimeWindowAggregate>((item) => {
+			const { tracker, time_window, value, currency } = item as QueryRow;
+
+			return {
+				tracker,
+				timeWindow: time_window,
+				price: new Price(value, currency as Currency),
+			};
+		});
+}
+
+export function getLatestPrice(tracker: Tracker): Price {
+	const db = getTimeSeriesDbClient();
+
+	type Row = {
+		tracker_name: string;
+		value: number;
+		currency: string;
+		timestamp: string;
+	};
+
+	const latest = db
+		.query(
+			`
+			WITH 
+			recents AS (
+				SELECT tracker_id, MAX(timestamp) AS latest_time
+				FROM ${TS_TABLE_NAME}
+				WHERE value >= 0
+				GROUP BY tracker_id
+			)
+			SELECT 
+				tr.name AS tracker_name,
+				ts.value AS value,
+				ts.currency AS currency
+				ts.timestamp AS timestamp,
+			FROM ${TS_TABLE_NAME} ts
+			JOIN ${TS_TRACKERS_TABLE_NAME} tr on tr.id = ts.tracker_id AND tr.name = $tracker
+			JOIN recents r on r.tracker_id = ts.tracker_id AND r.latest_time = ts.timestamp
+			`,
+		)
+		.get({ $tracker: tracker }) as Row;
+
+	return new Price(latest.value, latest.currency as Currency, { timestamp: new Date(latest.timestamp) });
 }
