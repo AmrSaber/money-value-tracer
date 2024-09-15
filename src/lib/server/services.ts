@@ -177,8 +177,7 @@ export function getLatestPrice(tracker: Tracker): Price {
 	const latest = db
 		.query(
 			`
-			WITH 
-			recents AS (
+			WITH recents AS (
 				SELECT tracker_id, MAX(timestamp) AS latest_time
 				FROM ${TS_TABLE_NAME}
 				WHERE value >= 0
@@ -187,8 +186,8 @@ export function getLatestPrice(tracker: Tracker): Price {
 			SELECT 
 				tr.name AS tracker_name,
 				ts.value AS value,
-				ts.currency AS currency
-				ts.timestamp AS timestamp,
+				ts.currency AS currency,
+				ts.timestamp AS timestamp
 			FROM ${TS_TABLE_NAME} ts
 			JOIN ${TS_TRACKERS_TABLE_NAME} tr on tr.id = ts.tracker_id AND tr.name = $tracker
 			JOIN recents r on r.tracker_id = ts.tracker_id AND r.latest_time = ts.timestamp
