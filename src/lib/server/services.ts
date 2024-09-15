@@ -125,18 +125,23 @@ export function getTimeWindowAggregation(
 ): TimeWindowAggregate[] {
 	const db = getTimeSeriesDbClient();
 
-	const durationSeconds = duration.as('seconds');
-	const query = `
+	return db
+		.query(
+			`
         SELECT
             tr.name as tracker,
-            STRFTIME('%FT%T', (STRFTIME('%s', ts.timestamp) / ${durationSeconds}) * ${durationSeconds}, 'unixepoch') AS time_window,
+            STRFTIME('%FT%T', (STRFTIME('%s', ts.timestamp) / $duration) * $duration, 'unixepoch') AS time_window,
             ROUND(AVG(value), 3) as value
         FROM ${TS_TABLE_NAME} ts
-        JOIN ${TS_TRACKERS_TABLE_NAME} tr ON tr.id = ts.tracker_id
-        WHERE tr.name = "${tracker}" AND ts.timestamp >= "${cutoff?.toISO() ?? 0}"
+        JOIN ${TS_TRACKERS_TABLE_NAME} tr ON tr.id = ts.tracker_id AND tr.name = $tracker
+        WHERE ts.timestamp >= $cutoff
         GROUP BY time_window, tracker
 		ORDER BY time_window ASC
-    `;
-
-	return db.query(query).all() as TimeWindowAggregate[];
+    `,
+		)
+		.all({
+			$duration: duration.as('seconds'),
+			$tracker: tracker,
+			$cutoff: cutoff?.toISO() ?? 0,
+		}) as TimeWindowAggregate[];
 }
